@@ -5,6 +5,7 @@ import { SketchPad } from './SketchPad';
 import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
+import { ruleFor, inputPropsFor, sanitize } from './validation';
 
 const SAVE_KEY = 'mash-adventure-save-v1';
 // Original ending colors, each swapped for the closest madebit palette color.
@@ -47,7 +48,10 @@ export default function App() {
   const go = (route: string, patch: Partial<GameState> = {}) =>
     setState((s) => ({ ...s, ...patch, route, history: route === 'Home' ? [] : [...s.history, s.route] }));
   const back = () => setState((s) => ({ ...s, route: s.history[s.history.length - 1] ?? 'Home', history: s.history.slice(0, -1) }));
-  const home = () => setState(fresh());
+  // Answers are kept between runs so players can replay for a different ending without retyping.
+  const home = () => setState((s) => ({ ...fresh(), profile: s.profile, groups: s.groups }));
+  const startOver = () => setState(fresh());
+  const replay = () => setState((s) => ({ ...fresh(), profile: s.profile, groups: s.groups, route: 'MashQuizNumber' }));
 
   const onChoice = (b: Extract<Block, { t: 'choice' }>) => {
     if (b.href) return void window.open(b.href, '_blank');
@@ -75,10 +79,10 @@ export default function App() {
   const isResult = id === 'Results';
 
   let body: React.ReactNode;
-  if (id === 'Home') body = <Home onStart={() => go('Profile')} onHowTo={() => go('Mash')} onAbout={() => go('About')} />;
+  if (id === 'Home') body = <Home hasAnswers={!!state.profile.name} onStart={() => go('Profile')} onReplay={replay} onClear={startOver} onHowTo={() => go('Mash')} onAbout={() => go('About')} />;
   else if (story.inputs[id]) body = <InputView key={id} id={id} state={state} go={go} />;
   else if (id === 'MashQuizNumber') body = <MagicNumber state={state} go={go} />;
-  else if (isResult) body = <Results state={state} onHome={home} />;
+  else if (isResult) body = <Results state={state} onReplay={replay} onStartOver={startOver} />;
   else if (story.scenes[id]) body = <Blocks blocks={story.scenes[id].blocks} vars={vars} onChoice={onChoice} />;
   else body = <p className="para">Lost in the woods. <button className="choice" onClick={home}>Home</button></p>;
 
@@ -106,7 +110,9 @@ export default function App() {
 
 const SLIDES = ['mansion.png', 'apartment.png', 'shack.png', 'house.png'];
 
-function Home({ onStart, onHowTo, onAbout }: { onStart: () => void; onHowTo: () => void; onAbout: () => void }) {
+type HomeProps = { hasAnswers: boolean; onStart: () => void; onReplay: () => void; onClear: () => void; onHowTo: () => void; onAbout: () => void };
+
+function Home({ hasAnswers, onStart, onReplay, onClear, onHowTo, onAbout }: HomeProps) {
   const [i, setI] = useState(0);
   useEffect(() => preload(SLIDES), []);
   useEffect(() => {
@@ -125,7 +131,17 @@ function Home({ onStart, onHowTo, onAbout }: { onStart: () => void; onHowTo: () 
         </div>
         <span className="slides-caption">Mansion? Apartment? Shack? House?</span>
       </div>
-      <button className="btn btn-start" onClick={onStart}>START</button>
+      {hasAnswers ? (
+        <>
+          <button className="btn btn-start" onClick={onReplay}>PLAY AGAIN</button>
+          <div className="btn-pair">
+            <button className="btn btn-gold" onClick={onStart}>EDIT ANSWERS</button>
+            <button className="btn btn-cream" onClick={onClear}>START OVER</button>
+          </div>
+        </>
+      ) : (
+        <button className="btn btn-start" onClick={onStart}>START</button>
+      )}
       <div className="btn-pair">
         <button className="btn btn-purple" onClick={onHowTo}>HOW TO PLAY</button>
         <button className="btn btn-mint" onClick={onAbout}>ABOUT</button>
@@ -144,28 +160,45 @@ function InputView({ id, state, go }: { id: string; state: GameState; go: Go }) 
   const screen = story.inputs[id];
   const existing = screen.group === 'profile' ? (state.profile as unknown as Record<string, string>) : state.groups[screen.group];
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(screen.fields.map((f) => [f.key, existing?.[f.key] ?? ''])));
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
 
   const next = (e: React.FormEvent) => {
     e.preventDefault();
-    if (screen.fields.some((f) => values[f.key].trim() === '')) return setError('Please fill in all values');
-    if (screen.group === 'profile') go(screen.next, { profile: values as GameState['profile'] });
-    else go(screen.next, { groups: { ...state.groups, [screen.group]: values } });
+    const found = Object.fromEntries(screen.fields.map((f) => [f.key, ruleFor(f.key).check(values[f.key])]));
+    setErrors(found);
+    const firstBad = screen.fields.find((f) => found[f.key]);
+    if (firstBad) return void document.getElementById(`f-${firstBad.key}`)?.focus();
+    const clean = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
+    if (screen.group === 'profile') go(screen.next, { profile: clean as GameState['profile'] });
+    else go(screen.next, { groups: { ...state.groups, [screen.group]: clean } });
   };
 
   return (
-    <form onSubmit={next} className="input-screen">
+    <form onSubmit={next} className="input-screen" noValidate>
       <Blocks blocks={screen.blocks} vars={{}} onChoice={() => {}} />
-      {screen.fields.map((f) => (
-        <input
-          key={f.key}
-          aria-label={f.placeholder}
-          placeholder={f.placeholder}
-          value={values[f.key]}
-          onChange={(e) => { setError(''); setValues((v) => ({ ...v, [f.key]: e.target.value })); }}
-        />
-      ))}
-      {error && <p className="error">{error}</p>}
+      {screen.fields.map((f) => {
+        const rule = ruleFor(f.key);
+        const err = errors[f.key];
+        return (
+          <div key={f.key} className="field">
+            <input
+              id={`f-${f.key}`}
+              aria-label={f.placeholder}
+              aria-invalid={!!err}
+              aria-describedby={err ? `e-${f.key}` : undefined}
+              placeholder={f.placeholder}
+              value={values[f.key]}
+              {...inputPropsFor(rule)}
+              onChange={(e) => {
+                const v = sanitize(rule, e.target.value);
+                setValues((x) => ({ ...x, [f.key]: v }));
+                if (err) setErrors((x) => ({ ...x, [f.key]: null }));
+              }}
+            />
+            {err && <p className="error" id={`e-${f.key}`}>{err}</p>}
+          </div>
+        );
+      })}
       <button className="btn btn-start" type="submit">NEXT</button>
     </form>
   );
@@ -200,7 +233,7 @@ function MagicNumber({ state, go }: { state: GameState; go: Go }) {
 
 const FORTUNE_LABELS = ['Home', 'Love', 'City', 'Kids', 'Job', 'Ride', 'Bank', 'Pet'];
 
-function Results({ state, onHome }: { state: GameState; onHome: () => void }) {
+function Results({ state, onReplay, onStartOver }: { state: GameState; onReplay: () => void; onStartOver: () => void }) {
   const res = useMemo(() => calculateMash(state.groups, state.number.quiz_num), [state.groups, state.number.quiz_num]);
   const ending = story.endings[String(state.number.story_num)] ?? story.endings.default;
   const bg = RESULT_BG[ending.bg ?? 0] ?? RESULT_BG[0];
@@ -216,7 +249,7 @@ function Results({ state, onHome }: { state: GameState; onHome: () => void }) {
         <h1 className="band-title">{title}</h1>
       </header>
       <div className="ending-body">
-        <Blocks blocks={body} vars={{ res, profile: state.profile, numbers: state.number, __mark: true }} onChoice={onHome} />
+        <Blocks blocks={body} vars={{ res, profile: state.profile, numbers: state.number, __mark: true }} onChoice={onReplay} />
         <section className="card fortune" aria-label="Your fortune">
           <span className="fortune-head">YOUR FORTUNE · MAGIC NUMBER {state.number.quiz_num}</span>
           <dl>
@@ -225,7 +258,9 @@ function Results({ state, onHome }: { state: GameState; onHome: () => void }) {
             ))}
           </dl>
         </section>
-        <button className="btn btn-teal" onClick={onHome}>PLAY AGAIN</button>
+        <button className="btn btn-teal" onClick={onReplay}>PLAY AGAIN</button>
+        <p className="replay-note">Same answers, new magic number, maybe a new ending.</p>
+        <button className="btn btn-cream" onClick={onStartOver}>START OVER</button>
         <ArtistCard ending />
         <Credits />
       </div>
