@@ -7,7 +7,8 @@ import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
 
 const SAVE_KEY = 'mash-adventure-save-v1';
-const RESULT_BG = ['#c7ea95', '#122f4a', '#448017', '#dd77ab', '#dac09e', '#6e67c5', '#2e4522', '#f4da6b', '#d34e4f', '#5da372', '#694a82', '#694a82'];
+// Original ending colors, each swapped for the closest madebit palette color.
+const RESULT_BG = ['#9DBE3D', '#187489', '#93C78E', '#F77FA1', '#F2B84B', '#796AD8', '#187489', '#F2B84B', '#C8332D', '#93C78E', '#796AD8', '#796AD8'];
 
 // The original used white text on every ending; light backgrounds get dark text so they're readable.
 const isLight = (hex: string) => {
@@ -68,15 +69,18 @@ export default function App() {
     <div className="app">
       {id !== 'Home' && (
         <header className="topbar">
-          {!isResult && state.history.length > 0 ? <button className="back" onClick={back} aria-label="Back">←</button> : <span className="back" />}
-          <span className="title">{isResult ? 'Results' : 'M.A.S.H.'}</span>
-          <button className="back" onClick={home} aria-label="Home">⌂</button>
+          {!isResult && state.history.length > 0 ? (
+            <button className="icon-btn" onClick={back} aria-label="Back">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+          ) : <span className="icon-btn ghost" />}
+          <span className="title">{isResult ? 'RESULTS' : 'M.A.S.H.'}</span>
+          <button className="icon-btn" onClick={home} aria-label="Home">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></svg>
+          </button>
         </header>
       )}
-      <main
-        className={`screen ${isResult ? 'result' : ''}`}
-        style={isResult ? { background: RESULT_BG[state.number.story_num] ?? RESULT_BG[0], color: isLight(RESULT_BG[state.number.story_num] ?? RESULT_BG[0]) ? '#1c1c1c' : '#fff' } : undefined}
-      >
+      <main key={state.route + state.history.length} className={`screen ${isResult ? 'result' : ''}`}>
         {body}
       </main>
     </div>
@@ -94,16 +98,24 @@ function Home({ onStart, onHowTo, onAbout }: { onStart: () => void; onHowTo: () 
   return (
     <div className="home">
       <img className="logo" src={img('MASH.png')} alt="M.A.S.H. Adventure" />
-      <div className="slides">
-        {SLIDES.map((s, j) => <img key={s} src={img(s)} alt="" className={j === i ? 'on' : ''} />)}
+      <div className="card slides-card">
+        <div className="slides">
+          {SLIDES.map((s, j) => <img key={s} src={img(s)} alt="" className={j === i ? 'on' : ''} />)}
+        </div>
+        <div className="chips" aria-hidden="true">
+          {'MASH'.split('').map((l, j) => <span key={l} className={j === i ? 'chip on' : 'chip'}>{l}</span>)}
+        </div>
+        <span className="slides-caption">Mansion? Apartment? Shack? House?</span>
       </div>
-      <div className="home-buttons">
-        <button className="choice" style={{ background: '#d86a92' }} onClick={onStart}>START</button>
-        <button className="choice" style={{ background: '#796ad8' }} onClick={onHowTo}>How To Play Traditional MASH</button>
-        <button className="choice" style={{ background: '#33c18d' }} onClick={onAbout}>About MASH Adventure</button>
+      <button className="btn btn-start" onClick={onStart}>START</button>
+      <div className="btn-pair">
+        <button className="btn btn-purple" onClick={onHowTo}>HOW TO PLAY</button>
+        <button className="btn btn-mint" onClick={onAbout}>ABOUT</button>
       </div>
-      <ArtistCard />
-      <Credits />
+      <div className="home-foot">
+        <ArtistCard />
+        <Credits />
+      </div>
     </div>
   );
 }
@@ -129,13 +141,14 @@ function InputView({ id, state, go }: { id: string; state: GameState; go: Go }) 
       {screen.fields.map((f) => (
         <input
           key={f.key}
+          aria-label={f.placeholder}
           placeholder={f.placeholder}
           value={values[f.key]}
           onChange={(e) => { setError(''); setValues((v) => ({ ...v, [f.key]: e.target.value })); }}
         />
       ))}
       {error && <p className="error">{error}</p>}
-      <button className="choice" style={{ background: '#d34e4e' }} type="submit">Next</button>
+      <button className="btn btn-start" type="submit">NEXT</button>
     </form>
   );
 }
@@ -167,14 +180,37 @@ function MagicNumber({ state, go }: { state: GameState; go: Go }) {
   );
 }
 
+const FORTUNE_LABELS = ['Home', 'Love', 'City', 'Kids', 'Job', 'Ride', 'Bank', 'Pet'];
+
 function Results({ state, onHome }: { state: GameState; onHome: () => void }) {
   const res = useMemo(() => calculateMash(state.groups, state.number.quiz_num), [state.groups, state.number.quiz_num]);
   const ending = story.endings[String(state.number.story_num)] ?? story.endings.default;
+  const bg = RESULT_BG[ending.bg ?? 0] ?? RESULT_BG[0];
+  // First block is the "You Got: ..." headline; it moves into the colored band.
+  const [head, ...rest] = ending.blocks;
+  const headText = head && head.t === 'p' ? head.c.filter((c): c is string => typeof c === 'string').join('').trim() : '';
+  const title = headText.replace(/^You Got:\s*/, '');
+  const body = rest.filter((b) => b.t !== 'choice');
   return (
     <div className="ending">
-      <Blocks blocks={ending.blocks} vars={{ res, profile: state.profile, numbers: state.number }} onChoice={onHome} />
-      <ArtistCard onDark />
-      <Credits />
+      <header className="band" style={{ background: bg, color: isLight(bg) ? '#111111' : '#F8F6EF' }}>
+        <span className="band-eyebrow">YOU GOT:</span>
+        <h1 className="band-title">{title}</h1>
+      </header>
+      <div className="ending-body">
+        <Blocks blocks={body} vars={{ res, profile: state.profile, numbers: state.number, __mark: true }} onChoice={onHome} />
+        <section className="card fortune" aria-label="Your fortune">
+          <span className="fortune-head">YOUR FORTUNE · MAGIC NUMBER {state.number.quiz_num}</span>
+          <dl>
+            {FORTUNE_LABELS.map((l, i) => (
+              <div key={l}><dt>{l}</dt><dd>{res[i]}</dd></div>
+            ))}
+          </dl>
+        </section>
+        <button className="btn btn-teal" onClick={onHome}>PLAY AGAIN</button>
+        <ArtistCard ending />
+        <Credits />
+      </div>
     </div>
   );
 }

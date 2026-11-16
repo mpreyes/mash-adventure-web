@@ -1,14 +1,15 @@
 import { ARTIST } from './config';
 
-export function ArtistCard({ onDark = false }: { onDark?: boolean }) {
+export function ArtistCard({ ending = false }: { ending?: boolean }) {
   return (
-    <aside className={`artist-card ${onDark ? 'on-dark' : ''}`}>
+    <aside className="artist-card">
       <p>
-        <span aria-hidden="true">🎧</span> Made by <strong>{ARTIST.name}</strong>. If you like this game, go listen to my music.
+        <span className="eyebrow">MADE BY MADEBIT.</span>{' '}
+        {ending ? 'Liked your fortune? Go listen to my music.' : 'If you like this game, go listen to my music.'}
       </p>
-      <div className="artist-links">
-        {ARTIST.links.map((l) => (
-          <a key={l.href} href={l.href} target="_blank" rel="noreferrer">{l.label}</a>
+      <div className="pills">
+        {ARTIST.links.map((l, i) => (
+          <a key={l.href} className={`pill ${i === 0 ? 'gold' : 'mint'}`} href={l.href} target="_blank" rel="noreferrer">{l.label.toUpperCase()}</a>
         ))}
       </div>
     </aside>
