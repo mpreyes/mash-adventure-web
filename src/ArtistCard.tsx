@@ -4,8 +4,8 @@ export function ArtistCard({ ending = false }: { ending?: boolean }) {
   return (
     <aside className="artist-card">
       <p>
-        <span className="eyebrow">MADE BY MADEBIT.</span>{' '}
-        {ending ? 'Liked your fortune? Go listen to my music.' : 'If you like this game, go listen to my music.'}
+        <span className="eyebrow">By Madelyn.</span>{' '}
+        {ending ? 'Liked your fortune? Support my artist project, madebit.' : 'If you like this game, support my artist project, madebit.'}
       </p>
       <div className="pills">
         {ARTIST.links.map((l, i) => (

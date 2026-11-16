@@ -2,7 +2,7 @@
 
 The classic pen-and-paper M.A.S.H. fortune game, combined with choose-your-own-adventure stories and fanfiction-style endings. Originally a React Native app made for funsies in summer 2018 ([original repo](https://github.com/mpreyes/Mash-Adventure)), now ported to the web.
 
-Made by [madebit](https://madebit.studio). Images from [Vecteezy.com](https://www.vecteezy.com).
+By Madelyn. Support my artist project, [madebit](https://madebit.studio). Images from [Vecteezy.com](https://www.vecteezy.com).
 
 ## Develop
 
