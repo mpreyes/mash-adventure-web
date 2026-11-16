@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { story, screenFor } from './story';
 import { Blocks, img } from './Blocks';
 import { SketchPad } from './SketchPad';
@@ -35,9 +35,13 @@ function load(): GameState {
 export default function App() {
   const [state, setState] = useState<GameState>(load);
 
+  // Reset scroll before the new screen paints, so it never shows up mid-page and then jumps.
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [state.route, state.history.length]);
+
   useEffect(() => {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
-    window.scrollTo(0, 0);
   }, [state.route]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = (route: string, patch: Partial<GameState> = {}) =>

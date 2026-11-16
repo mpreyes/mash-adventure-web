@@ -114,12 +114,14 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 .pill:hover { color: var(--ink); filter: brightness(1.05); }
 .credits { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 0; }
 
-/* motion: one quick fade between screens, buttons that press into their shadow, a slideshow cross-fade */
+/* motion: buttons press down like a key; the next screen fades in in place. No hover lift, no bouncing. */
+.btn:active, .choice:active, .image-choice:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
-  .screen { animation: screen-in 0.18s ease-out; }
+  .screen { animation: screen-in 0.12s ease-out; }
   .slides img { transition: opacity 0.4s ease; }
-  .btn, .choice, .image-choice, .icon-btn, .pill { transition: transform 0.08s ease, box-shadow 0.08s ease; }
-  .btn:hover, .choice:hover, .image-choice:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--ink); }
+  .btn, .choice, .image-choice { transition: transform 0.05s ease, box-shadow 0.05s ease; }
 }
-.btn:active, .choice:active, .image-choice:active { transform: translateY(6px); box-shadow: 0 0 0 var(--ink); }
+@media (hover: hover) {
+  .btn:hover, .choice:hover, .image-choice:hover { filter: brightness(1.06); }
+}
 @keyframes screen-in { from { opacity: 0; } }
