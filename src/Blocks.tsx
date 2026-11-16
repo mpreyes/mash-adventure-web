@@ -1,6 +1,25 @@
 import type { Block, Inline } from './types';
 
-export const img = (src: string) => `${import.meta.env.BASE_URL}images/${src}`;
+// Images ship as resized WebP (the original PNG/JPGs were up to several MB each).
+export const img = (src: string) => `${import.meta.env.BASE_URL}images/${src.replace(/\.(png|jpe?g)$/i, '.webp')}`;
+
+const preloaded = new Set<string>();
+/** Warm the browser cache so images are ready before their screen opens. */
+export function preload(srcs: string[]) {
+  for (const s of srcs) {
+    const url = img(s);
+    if (preloaded.has(url)) continue;
+    preloaded.add(url);
+    const i = new Image();
+    i.decoding = 'async';
+    i.src = url;
+  }
+}
+
+/** Every image a list of blocks shows. */
+export function imagesIn(list: Block[]): string[] {
+  return list.flatMap((b) => (b.t === 'img' ? [b.src] : b.t === 'row' ? imagesIn(b.c) : b.t === 'choice' && b.img ? [b.img] : []));
+}
 
 export type Vars = Record<string, unknown> & { __mark?: boolean };
 type Choice = Extract<Block, { t: 'choice' }>;
@@ -75,7 +94,7 @@ export function Blocks({ blocks, vars, onChoice, renderSketch }: Props) {
         case 'img':
           return (
             <figure key={i} className="art-card">
-              <img src={img(b.src)} alt="" loading="lazy" />
+              <img src={img(b.src)} alt="" decoding="async" />
             </figure>
           );
         case 'row':

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { story, screenFor } from './story';
-import { Blocks, img } from './Blocks';
+import { Blocks, img, preload, imagesIn } from './Blocks';
 import { SketchPad } from './SketchPad';
 import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
@@ -58,6 +58,19 @@ export default function App() {
   };
 
   const id = screenFor(state.route);
+
+  // Preload the images of every screen one tap away, so they're ready when the player arrives.
+  useEffect(() => {
+    const blocksOf = (sid: string) => story.scenes[sid]?.blocks ?? story.inputs[sid]?.blocks ?? [];
+    const here = id === 'Home' ? [{ t: 'choice' as const, to: 'Profile' }, { t: 'choice' as const, to: 'Mash' }, { t: 'choice' as const, to: 'About' }] : blocksOf(id);
+    const next = new Set<string>();
+    const collect = (list: typeof here) => list.forEach((b) => { if (b.t === 'row') collect(b.c); if (b.t === 'choice' && b.to) next.add(screenFor(b.to)); });
+    collect(here);
+    if (story.inputs[id]) next.add(screenFor(story.inputs[id].next));
+    const srcs = [...next].flatMap((n) => imagesIn(blocksOf(n)));
+    if (next.has('Results')) srcs.push(...Object.values(story.endings).flatMap((e) => imagesIn(e.blocks)));
+    preload(srcs);
+  }, [id]);
   const vars = { profile: state.profile, numbers: state.number };
   const isResult = id === 'Results';
 
@@ -95,6 +108,7 @@ const SLIDES = ['mansion.png', 'apartment.png', 'shack.png', 'house.png'];
 
 function Home({ onStart, onHowTo, onAbout }: { onStart: () => void; onHowTo: () => void; onAbout: () => void }) {
   const [i, setI] = useState(0);
+  useEffect(() => preload(SLIDES), []);
   useEffect(() => {
     const t = setInterval(() => setI((x) => (x + 1) % SLIDES.length), 2500);
     return () => clearInterval(t);
