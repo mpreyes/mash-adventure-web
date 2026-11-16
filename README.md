@@ -1,2 +1,24 @@
-# mash-adventure-web
-M.A.S.H. Adventure, ported to the web. The classic pen-and-paper fortune game meets choose-your-own-adventure.
+# M.A.S.H. Adventure (web)
+
+The classic pen-and-paper M.A.S.H. fortune game, combined with choose-your-own-adventure stories and fanfiction-style endings. Originally a React Native app made for funsies in summer 2018 ([original repo](https://github.com/mpreyes/Mash-Adventure)), now ported to the web.
+
+Made by [madebit](https://madebit.studio). Images from [Vecteezy.com](https://www.vecteezy.com).
+
+## Develop
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+- `npm run build` builds for GitHub Pages (served at `/mash-adventure-web/`). Pushing to `main` deploys automatically.
+- `npm run build:itch` builds with relative paths into `dist-itch/`. Zip that folder's contents and upload it to itch.io as an HTML game.
+
+## How it's put together
+
+- `src/story.json` holds every scene, input screen and ending, converted word for word from the original app's screens by `scripts/convert-rn-screens.mjs`.
+- `src/mash.ts` is the original M.A.S.H. elimination logic.
+- `src/App.tsx` renders scenes from the data, plus the input screens, the magic-number drawing pad and the results.
+- `src/config.ts` holds the madebit links shown on the title screen and endings.
