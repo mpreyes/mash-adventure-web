@@ -135,7 +135,7 @@ function InputView({ id, state, go }: { id: string; state: GameState; go: Go }) 
         />
       ))}
       {error && <p className="error">{error}</p>}
-      <button className="choice anim-zoomIn" style={{ background: '#d34e4e' }} type="submit">Next</button>
+      <button className="choice" style={{ background: '#d34e4e' }} type="submit">Next</button>
     </form>
   );
 }
