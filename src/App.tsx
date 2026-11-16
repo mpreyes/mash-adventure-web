@@ -6,6 +6,7 @@ import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
 import { ruleFor, inputPropsFor, sanitize } from './validation';
+import { ENDING_IDS, endingIdFor, endingTitle, useUnlocked } from './endings';
 
 const SAVE_KEY = 'mash-adventure-save-v1';
 // Original ending colors, each swapped for the closest madebit palette color.
@@ -35,6 +36,7 @@ function load(): GameState {
 
 export default function App() {
   const [state, setState] = useState<GameState>(load);
+  const { unlocked, unlock } = useUnlocked();
 
   // Reset scroll before the new screen paints, so it never shows up mid-page and then jumps.
   useLayoutEffect(() => {
@@ -77,12 +79,14 @@ export default function App() {
   }, [id]);
   const vars = { profile: state.profile, numbers: state.number };
   const isResult = id === 'Results';
+  const isEndings = id === 'Endings';
 
   let body: React.ReactNode;
-  if (id === 'Home') body = <Home hasAnswers={!!state.profile.name} onStart={() => go('Profile')} onReplay={replay} onClear={startOver} onHowTo={() => go('Mash')} onAbout={() => go('About')} />;
+  if (id === 'Home') body = <Home hasAnswers={!!state.profile.name} unlockedCount={unlocked.length} onStart={() => go('Profile')} onReplay={replay} onClear={startOver} onHowTo={() => go('Mash')} onAbout={() => go('About')} onEndings={() => go('Endings')} />;
+  else if (isEndings) body = <EndingsView unlocked={unlocked} onPlay={state.profile.name ? replay : () => go('Profile')} />;
   else if (story.inputs[id]) body = <InputView key={id} id={id} state={state} go={go} />;
   else if (id === 'MashQuizNumber') body = <MagicNumber state={state} go={go} />;
-  else if (isResult) body = <Results state={state} onReplay={replay} onStartOver={startOver} />;
+  else if (isResult) body = <Results state={state} unlocked={unlocked} unlock={unlock} onReplay={replay} onStartOver={startOver} onEndings={() => go('Endings')} />;
   else if (story.scenes[id]) body = <Blocks blocks={story.scenes[id].blocks} vars={vars} onChoice={onChoice} />;
   else body = <p className="para">Lost in the woods. <button className="choice" onClick={home}>Home</button></p>;
 
@@ -95,7 +99,7 @@ export default function App() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
           ) : <span className="icon-btn ghost" />}
-          <span className="title">{isResult ? 'RESULTS' : 'M.A.S.H.'}</span>
+          <span className="title">{isResult ? 'RESULTS' : isEndings ? 'ENDINGS' : 'M.A.S.H.'}</span>
           <button className="icon-btn" onClick={home} aria-label="Home">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></svg>
           </button>
@@ -110,9 +114,9 @@ export default function App() {
 
 const SLIDES = ['mansion.png', 'apartment.png', 'shack.png', 'house.png'];
 
-type HomeProps = { hasAnswers: boolean; onStart: () => void; onReplay: () => void; onClear: () => void; onHowTo: () => void; onAbout: () => void };
+type HomeProps = { hasAnswers: boolean; unlockedCount: number; onStart: () => void; onReplay: () => void; onClear: () => void; onHowTo: () => void; onAbout: () => void; onEndings: () => void };
 
-function Home({ hasAnswers, onStart, onReplay, onClear, onHowTo, onAbout }: HomeProps) {
+function Home({ hasAnswers, unlockedCount, onStart, onReplay, onClear, onHowTo, onAbout, onEndings }: HomeProps) {
   const [i, setI] = useState(0);
   useEffect(() => preload(SLIDES), []);
   useEffect(() => {
@@ -146,6 +150,9 @@ function Home({ hasAnswers, onStart, onReplay, onClear, onHowTo, onAbout }: Home
         <button className="btn btn-purple" onClick={onHowTo}>HOW TO PLAY</button>
         <button className="btn btn-mint" onClick={onAbout}>ABOUT</button>
       </div>
+      <button className="btn btn-cream btn-endings" onClick={onEndings}>
+        ENDINGS <span className="count-badge">{unlockedCount}/{ENDING_IDS.length}</span>
+      </button>
       <div className="home-foot">
         <ArtistCard />
         <Credits />
@@ -233,7 +240,20 @@ function MagicNumber({ state, go }: { state: GameState; go: Go }) {
 
 const FORTUNE_LABELS = ['Home', 'Love', 'City', 'Kids', 'Job', 'Ride', 'Bank', 'Pet'];
 
-function Results({ state, onReplay, onStartOver }: { state: GameState; onReplay: () => void; onStartOver: () => void }) {
+type ResultsProps = { state: GameState; unlocked: string[]; unlock: (id: string) => boolean; onReplay: () => void; onStartOver: () => void; onEndings: () => void };
+
+function Progress({ filled, total, small = false }: { filled: number; total: number; small?: boolean }) {
+  return (
+    <div className={`progress ${small ? 'small' : ''}`} role="img" aria-label={`${filled} of ${total} endings unlocked`}>
+      {Array.from({ length: total }, (_, i) => <span key={i} className={i < filled ? 'on' : ''} />)}
+    </div>
+  );
+}
+
+function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: ResultsProps) {
+  const endingId = endingIdFor(state.number.story_num);
+  const [isNew, setIsNew] = useState(false);
+  useEffect(() => { if (unlock(endingId)) setIsNew(true); }, [endingId]); // eslint-disable-line react-hooks/exhaustive-deps
   const res = useMemo(() => calculateMash(state.groups, state.number.quiz_num), [state.groups, state.number.quiz_num]);
   const ending = story.endings[String(state.number.story_num)] ?? story.endings.default;
   const bg = RESULT_BG[ending.bg ?? 0] ?? RESULT_BG[0];
@@ -248,6 +268,15 @@ function Results({ state, onReplay, onStartOver }: { state: GameState; onReplay:
         <span className="band-eyebrow">YOU GOT:</span>
         <h1 className="band-title">{title}</h1>
       </header>
+      {isNew && (
+        <div className="unlock-strip">
+          <span className="new-tag">NEW!</span>
+          <div className="unlock-text">
+            <span>Ending unlocked · {unlocked.length} of {ENDING_IDS.length}</span>
+            <Progress filled={unlocked.length} total={ENDING_IDS.length} small />
+          </div>
+        </div>
+      )}
       <div className="ending-body">
         <Blocks blocks={body} vars={{ res, profile: state.profile, numbers: state.number, __mark: true }} onChoice={onReplay} />
         <section className="card fortune" aria-label="Your fortune">
@@ -260,10 +289,50 @@ function Results({ state, onReplay, onStartOver }: { state: GameState; onReplay:
         </section>
         <button className="btn btn-teal" onClick={onReplay}>PLAY AGAIN</button>
         <p className="replay-note">Same answers, new magic number, maybe a new ending.</p>
+        <button className="btn btn-cream" onClick={onEndings}>SEE ALL ENDINGS</button>
         <button className="btn btn-cream" onClick={onStartOver}>START OVER</button>
         <ArtistCard ending />
         <Credits />
       </div>
+    </div>
+  );
+}
+
+function EndingsView({ unlocked, onPlay }: { unlocked: string[]; onPlay: () => void }) {
+  const total = ENDING_IDS.length;
+  return (
+    <div className="endings">
+      <section className="card endings-summary">
+        <div className="endings-count">
+          <span className="big">{unlocked.length}<span className="of"> / {total}</span></span>
+          <span className="label">endings unlocked</span>
+        </div>
+        <Progress filled={unlocked.length} total={total} />
+        <p>Same answers, different choices.</p>
+      </section>
+      <ul className="endings-grid">
+        {ENDING_IDS.map((id, i) => {
+          const open = unlocked.includes(id);
+          const bg = RESULT_BG[story.endings[id].bg ?? 0];
+          const num = String(i + 1).padStart(2, '0');
+          return open ? (
+            <li key={id} className="ending-card">
+              <span className="num" style={{ background: bg, color: isLight(bg) ? '#111111' : '#F8F6EF' }}>{num}</span>
+              <span className="name">{endingTitle(id).replace(/^The /, '')}</span>
+              <span className="state">Unlocked</span>
+            </li>
+          ) : (
+            <li key={id} className="ending-card locked" aria-label={`Ending ${num}, locked`}>
+              <span className="num">{num}</span>
+              <span className="lock">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><rect x="5" y="11" width="14" height="10" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+                <span>???</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <button className="btn btn-start" onClick={onPlay}>PLAY AGAIN</button>
     </div>
   );
 }

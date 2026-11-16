@@ -108,6 +108,32 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 .fortune dt { color: var(--muted); }
 .fortune dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
 
+/* endings tracker */
+.btn-endings { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.count-badge { background: var(--gold); border: 2px solid var(--ink); padding: 4px 6px; }
+.progress { display: flex; gap: 3px; }
+.progress span { flex: 1; height: 14px; border: 2px solid var(--ink); background: var(--cream); }
+.progress span.on { background: var(--pink); }
+.progress.small span { height: 8px; border-width: 1.5px; }
+.unlock-strip { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--cream); border-bottom: 2px solid var(--ink); }
+.new-tag { font-family: var(--pixel); font-size: 11px; background: var(--pink); border: 2px solid var(--ink); padding: 6px 7px; }
+.unlock-text { flex: 1; display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 15px; }
+.endings { display: flex; flex-direction: column; gap: 20px; }
+.endings-summary { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.endings-summary p { margin: 0; color: var(--muted); font-size: 15px; }
+.endings-count { display: flex; align-items: baseline; justify-content: space-between; }
+.endings-count .big { font-family: var(--pixel); font-size: 22px; }
+.endings-count .of { font-size: 14px; color: var(--muted); }
+.endings-count .label { font-weight: 700; color: var(--teal); font-size: 15px; }
+.endings-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ending-card { min-height: 118px; display: flex; flex-direction: column; background: var(--cream); border: 2px solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
+.ending-card .num { font-family: var(--pixel); font-size: 11px; padding: 6px 8px; border-bottom: 2px solid var(--ink); }
+.ending-card .name { padding: 8px 10px 4px; font-weight: 700; font-size: 15px; line-height: 1.3; }
+.ending-card .state { margin-top: auto; padding: 0 10px 10px; font-weight: 700; font-size: 13px; color: var(--teal); }
+.ending-card.locked { background: #c9dbec; border-style: dashed; border-color: var(--muted); box-shadow: none; color: var(--muted); }
+.ending-card.locked .num { border-bottom: 2px dashed var(--muted); }
+.ending-card .lock { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-family: var(--pixel); font-size: 12px; }
+
 /* madebit card */
 .artist-card { background: var(--cream); border: 2px solid var(--ink); padding: 14px; margin: 20px 0 10px; }
 .artist-card p { margin: 0 0 12px; font-size: 15px; line-height: 1.5; }

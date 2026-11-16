@@ -22,3 +22,10 @@ npm run dev
 - `src/mash.ts` is the original M.A.S.H. elimination logic.
 - `src/App.tsx` renders scenes from the data, plus the input screens, the magic-number drawing pad and the results.
 - `src/config.ts` holds the madebit links shown on the title screen and endings.
+
+## Story wiring changes from the original
+
+- The old man's "Take his last dying gift" now leads to **The Spooky Ending** (was Plot Generator).
+- The wizard's "Accept gift" now leads to **The Magical Ending** (was Plot Generator).
+
+Both endings existed in the original app but nothing led to them. If you rerun `scripts/convert-rn-screens.mjs`, reapply these two in `src/story.json`.
