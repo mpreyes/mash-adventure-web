@@ -189,12 +189,12 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
   .ending-body .artist-card, .ending-body .credits { max-width: 1180px; margin-left: auto; margin-right: auto; }
   .ending-body .artist-card { margin-top: 32px; }
 
-  .home { max-width: 1120px; margin: 0 auto; gap: 32px; padding-top: 8px; }
-  .home .logo { height: 240px; max-width: 620px; align-self: center; }
-  .home-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px; align-items: center; }
-  .home-main .slides-card { order: 2; padding: 28px; }
+  .home { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'logo slides' 'actions slides'; column-gap: 56px; row-gap: 24px; align-items: center; }
+  .home .logo { grid-area: logo; height: 220px; width: 100%; max-width: 480px; justify-self: center; align-self: end; }
+  .home-main { display: contents; }
+  .home-main .slides-card { grid-area: slides; padding: 28px; }
   .home-main .slides { height: 360px; }
-  .home-actions { display: flex; flex-direction: column; gap: 16px; }
+  .home-actions { grid-area: actions; align-self: start; }
   .home-actions .btn-start { min-height: 64px; font-size: 18px; }
 
   .endings { max-width: 1000px; margin: 0 auto; }
