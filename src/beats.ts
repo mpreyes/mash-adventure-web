@@ -66,7 +66,6 @@ const EFFECTS: Record<string, Effects> = {
     big: ['Yay?'],
     overlays: [
       { at: 'The wheel of fortune says you will', image: 'fortune.png' },
-      { at: 'drive a', insertBefore: true, before: ['mashSheet'] },
     ],
   },
   // Spooky

@@ -6,6 +6,7 @@ import { Spread, useIsDesktop } from './Spread';
 import { beatsFor } from './beats';
 import { BeatView, CONSUMES_IMAGE } from './BeatView';
 import { About } from './About';
+import { MashCount } from './MashCount';
 import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
@@ -284,11 +285,13 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
   const desktop = useIsDesktop();
   const endingId = endingIdFor(state.number.story_num);
   const [isNew, setIsNew] = useState(false);
-  useEffect(() => { if (unlock(endingId)) setIsNew(true); }, [endingId]); // eslint-disable-line react-hooks/exhaustive-deps
   const res = useMemo(() => calculateMash(state.groups, state.number.quiz_num), [state.groups, state.number.quiz_num]);
   const ending = story.endings[endingId];
   const beats = useMemo(() => beatsFor(endingId, ending), [endingId, ending]);
   const [step, setStep] = useState(0);
+  const [counted, setCounted] = useState(false);
+  // Unlock once the count-off is over, so the header doesn't give the ending away early.
+  useEffect(() => { if (counted && unlock(endingId)) setIsNew(true); }, [endingId, counted]); // eslint-disable-line react-hooks/exhaustive-deps
   const total = beats.length + 1; // + the fortune screen
   const isFinal = step === beats.length;
   const beat = beats[step];
@@ -338,6 +341,28 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
       <button className="btn btn-start" onClick={next}>{step === beats.length - 1 ? 'SEE MY FORTUNE' : 'NEXT'}</button>
     </div>
   );
+
+  if (!counted) {
+    const count = <MashCount groups={state.groups} magic={state.number.quiz_num} onDone={() => { setCounted(true); window.scrollTo({ top: 0, behavior: 'instant' }); }} />;
+    return (
+      <div className="ending">
+        <header className="band" style={{ background: '#187489', color: '#F8F6EF' }}>
+          <div className="band-top"><span className="band-eyebrow">MAGIC NUMBER {state.number.quiz_num}</span></div>
+          <h1 className="band-title">Counting your fortune...</h1>
+        </header>
+        {desktop ? (
+          <div className="ending-body">
+            <div className="spread beat-spread">
+              <div className="page page-left"><figure className="art-card"><img src={img('fortune.png')} alt="" /></figure></div>
+              <div className="page page-right">{count}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="ending-body beat-body">{count}</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`ending ${theme}`}>

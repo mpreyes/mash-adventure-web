@@ -368,3 +368,22 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 @keyframes stamp { 0% { transform: scale(1.25); background: var(--pink); } 100% { transform: scale(1); background: var(--gold); } }
 
 .reserve { visibility: hidden; }
+
+/* count-off */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.count-wrap { display: flex; flex-direction: column; gap: 18px; }
+.count-sheet .sheet-row { padding: 7px 0; }
+.count-badge-live { background: var(--gold); color: var(--ink); border: 2px solid var(--ink); padding: 5px 7px; min-width: 78px; text-align: center; }
+.count-badge-live.done { background: var(--mint); }
+.count-opt { position: relative; padding: 1px 7px; font-size: 16px; transition: color .25s; }
+.count-opt.cur { background: var(--gold); outline: 2px solid var(--ink); }
+.count-opt.cur.hit { background: var(--pink); }
+.count-opt.out { color: #8a96a2; }
+.count-opt.out::after { content: ''; position: absolute; left: 3px; right: 3px; top: 52%; height: 2px; background: #c8332d; transform-origin: left; animation: count-strike .25s ease-out both; }
+.count-opt.win { font-weight: 700; }
+.count-opt.win::before { content: ''; position: absolute; inset: -4px -3px; border: 2px solid #c8332d; border-radius: 50%; transform: rotate(-3deg); animation: count-ring .45s ease-out both; }
+@keyframes count-strike { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes count-ring { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@media (prefers-reduced-motion: reduce) { .count-opt.out::after, .count-opt.win::before { animation: none; } }
+.count-sheet .sheet-head { align-items: center; gap: 10px; font-size: 10px; line-height: 1.5; }
+.count-badge-live { white-space: nowrap; flex-shrink: 0; }
