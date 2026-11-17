@@ -5,6 +5,7 @@ import { SketchPad } from './SketchPad';
 import { Spread, useIsDesktop } from './Spread';
 import { beatsFor } from './beats';
 import { BeatView, CONSUMES_IMAGE } from './BeatView';
+import { About } from './About';
 import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
@@ -100,6 +101,7 @@ export default function App() {
   let body: React.ReactNode;
   if (id === 'Home') body = <Home hasAnswers={!!state.profile.name} unlockedCount={unlocked.length} onStart={() => go('Profile')} onReplay={replay} onClear={startOver} onHowTo={() => go('Mash')} onAbout={() => go('About')} onEndings={() => go('Endings')} />;
   else if (isEndings) body = <EndingsView unlocked={unlocked} onPlay={state.profile.name ? replay : () => go('Profile')} />;
+  else if (id === 'About') body = <About onHome={home} />;
   else if (story.inputs[id]) body = <InputView key={id} id={id} state={state} go={go} />;
   else if (id === 'MashQuizNumber') body = <MagicNumber state={state} go={go} />;
   else if (isResult) body = <Results state={state} unlocked={unlocked} unlock={unlock} onReplay={replay} onStartOver={startOver} onEndings={() => go('Endings')} />;
@@ -115,7 +117,7 @@ export default function App() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
           ) : <span className="icon-btn ghost" />}
-          <span className="title">{isResult ? 'RESULTS' : isEndings ? 'ENDINGS' : <>M.A.S.H.<span className="desktop-only"> ADVENTURE</span></>}</span>
+          <span className="title">{isResult ? 'RESULTS' : isEndings ? 'ENDINGS' : id === 'About' ? 'ABOUT' : <>M.A.S.H.<span className="desktop-only"> ADVENTURE</span></>}</span>
           <div className="topbar-right">
             {!isEndings && (
               <button className="header-endings desktop-only" onClick={() => go('Endings')}>
