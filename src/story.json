@@ -4963,14 +4963,7 @@
      "t": "p",
      "s": "titleWhite",
      "c": [
-      "You were walking home from school when it hit you. intro quiz num: ",
-      {
-       "v": "numbers.quiz_num"
-      },
-      " story num: ",
-      {
-       "v": "numbers.story_num"
-      }
+      "You were walking home from school when it hit you."
      ]
     },
     {
