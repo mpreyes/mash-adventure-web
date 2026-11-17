@@ -3,7 +3,8 @@ import { story, screenFor } from './story';
 import { Blocks, InlineView, img, preload, imagesIn } from './Blocks';
 import { SketchPad } from './SketchPad';
 import { Spread, useIsDesktop } from './Spread';
-import { beatsFor, type Beat } from './beats';
+import { beatsFor } from './beats';
+import { BeatView, CONSUMES_IMAGE } from './BeatView';
 import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
@@ -277,25 +278,6 @@ function Progress({ filled, total, small = false }: { filled: number; total: num
   );
 }
 
-function BeatView({ beat, vars, res }: { beat: Beat; vars: Record<string, unknown>; res: string[] }) {
-  return (
-    <div className="beat">
-      {beat.bank && (
-        <div className="bank-card" aria-label="Your bank balance">
-          <span className="bank-label">CHECKING · PAYDAY</span>
-          <span className="bank-amount">${res[6]}</span>
-          <span className="bank-note">No deposit this week</span>
-        </div>
-      )}
-      {beat.paras.map((p, i) => (
-        <p key={i} className={`para beat-text-${p.style}`}>
-          {p.c.map((n, j) => <InlineView key={j} node={n} vars={vars} />)}
-        </p>
-      ))}
-    </div>
-  );
-}
-
 function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: ResultsProps) {
   const desktop = useIsDesktop();
   const endingId = endingIdFor(state.number.story_num);
@@ -328,8 +310,12 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
   const bg = RESULT_BG[ending.bg ?? 0] ?? RESULT_BG[0];
   const title = endingTitle(endingId);
   const vars = { res, profile: state.profile, numbers: state.number, __mark: true };
-  const dark = !isFinal && !!beat?.dark;
-  const image = beat?.image ?? (desktop ? beats[0]?.image : undefined);
+  const theme = isFinal ? '' : beat?.dark ? 'lights-out' : beat?.overlay?.theme === 'dark' ? 'lights-out' : beat?.overlay?.theme ? `theme-${beat.overlay.theme}` : '';
+  const ctx = { vars, res, state };
+  // Desktop: the left page always shows a picture (this beat's, or the ending's own).
+  const ownImage = beat?.image && !(beat.overlay?.layout && CONSUMES_IMAGE.has(beat.overlay.layout)) ? beat.image : undefined;
+  const usable = (b: typeof beat) => (b?.image && !(b.overlay?.layout && CONSUMES_IMAGE.has(b.overlay.layout)) ? b.image : undefined);
+  const leftImage = ownImage ?? beats.slice(0, step + 1).reverse().map(usable).find(Boolean) ?? beats.map(usable).find(Boolean) ?? 'fortune.png';
 
   const fortune = (
     <section className="card fortune" aria-label="Your fortune">
@@ -352,7 +338,7 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
   );
 
   return (
-    <div className={`ending ${dark ? 'lights-out' : ''}`}>
+    <div className={`ending ${theme}`}>
       <header className="band" style={{ background: bg, color: isLight(bg) ? '#111111' : '#F8F6EF' }}>
         <div className="band-top">
           <span className="band-eyebrow">YOU GOT:</span>
@@ -388,10 +374,10 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
         <div className="ending-body">
           <div className="spread beat-spread">
             <div className="page page-left">
-              {image && <figure className="art-card"><img src={img(image)} alt="" /></figure>}
+              {leftImage && <figure className="art-card"><img src={img(leftImage)} alt="" /></figure>}
             </div>
             <div className="page page-right">
-              <BeatView key={step} beat={beat} vars={vars} res={res} />
+              <BeatView key={step} beat={beat} ctx={ctx} showImage={false} />
               {controls}
               <p className="kbd-hint">Tip: use the arrow keys to turn the page</p>
             </div>
@@ -399,8 +385,7 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
         </div>
       ) : (
         <div className="ending-body beat-body">
-          {image && <figure className="art-card"><img src={img(image)} alt="" /></figure>}
-          <BeatView key={step} beat={beat} vars={vars} res={res} />
+          <BeatView key={step} beat={beat} ctx={ctx} showImage />
           {controls}
         </div>
       )}
