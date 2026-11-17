@@ -48,7 +48,7 @@ function tidy(nodes: Inline[]): Inline[] {
   return out;
 }
 
-function InlineView({ node, vars }: { node: Inline; vars: Vars }) {
+export function InlineView({ node, vars }: { node: Inline; vars: Vars }) {
   if (typeof node === 'string') return <>{node}</>;
   if ('v' in node) {
     const val = evalVar(node.v, vars);

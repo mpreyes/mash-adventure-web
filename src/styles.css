@@ -140,6 +140,31 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 .desktop-only { display: none; }
 .kbd-hint { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
 
+/* endings told in beats */
+.ending { min-height: calc(100vh - 70px); display: flex; flex-direction: column; }
+.ending > .ending-body { flex: 1; }
+.band-top { display: flex; justify-content: space-between; align-items: center; }
+.band-progress { height: 8px; border: 2px solid var(--ink); background: var(--cream); }
+.band-progress span { display: block; height: 100%; background: var(--pink); }
+.beat-body { display: flex; flex-direction: column; }
+.beat-body .art-card img { height: 220px; }
+.beat { display: flex; flex-direction: column; gap: 4px; min-height: 240px; }
+.beat .para { white-space: normal; }
+.beat .para.beat-text-big { font-size: 26px; line-height: 1.4; font-weight: 700; }
+.beat-controls { display: flex; gap: 12px; align-items: center; margin-top: 18px; }
+.beat-controls .btn { margin: 0; }
+.icon-btn.big { width: 58px; height: 58px; flex-shrink: 0; box-shadow: 0 4px 0 var(--ink); }
+.icon-btn:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+.bank-card { align-self: center; width: 250px; margin: 4px 0 22px; background: var(--cream); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 6px 0 var(--ink); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.bank-label { font-family: var(--pixel); font-size: 10px; color: var(--muted); }
+.bank-amount { font-family: var(--pixel); font-size: 26px; align-self: flex-start; background: var(--gold); padding: 6px 4px; }
+.bank-note { font-size: 14px; font-weight: 700; color: #a32020; }
+.ending.lights-out { background: var(--ink); color: var(--cream); }
+.ending.lights-out .icon-btn { background: var(--cream); color: var(--ink); }
+.ending-body.final { display: flex; flex-direction: column; }
+.unlock-strip.boxed { border: 2px solid var(--ink); margin-bottom: 20px; }
+.link-btn { background: none; border: 0; color: var(--teal); font-weight: 700; font-size: 15px; text-decoration: underline; cursor: pointer; margin: 12px auto 0; }
+
 /* madebit card */
 .artist-card { background: var(--cream); border: 2px solid var(--ink); padding: 14px; margin: 20px 0 10px; }
 .artist-card p { margin: 0 0 12px; font-size: 15px; line-height: 1.5; }
@@ -201,6 +226,18 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
   .endings-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .endings .btn-start { max-width: 420px; align-self: center; }
 }
+@media (min-width: 960px) {
+  .beat-spread .page-left { justify-content: center; }
+  .beat-spread .art-card img { height: 440px; }
+  .beat-spread .page-right { justify-content: center; min-height: 520px; }
+  .beat .para { font-size: 20px; }
+  .page-right .para.beat-text-big, .beat .para.beat-text-big { font-size: 30px; line-height: 1.35; max-width: none; }
+  .ending-body.final { max-width: 640px; margin: 0 auto; width: 100%; }
+  .ending.lights-out .spread { background: #1d1d1d; border-color: var(--cream); box-shadow: 0 8px 0 #000; }
+  .ending.lights-out .page-left { background: #161616; border-color: var(--cream); }
+  .ending.lights-out .art-card img { filter: brightness(0.35); }
+}
+
 /* motion: buttons press down like a key; the next screen fades in in place. No hover lift, no bouncing. */
 .btn:active, .choice:active, .image-choice:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
@@ -212,3 +249,14 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
   .btn:hover, .choice:hover, .image-choice:hover { filter: brightness(1.06); }
 }
 @keyframes screen-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .beat { animation: beat-in 0.3s ease-out both; }
+  .beat mark.fill { display: inline-block; animation: stamp 0.35s ease-out both; animation-delay: 0.25s; }
+  .beat mark.fill:nth-of-type(2) { animation-delay: 0.45s; }
+  .beat mark.fill:nth-of-type(3) { animation-delay: 0.65s; }
+  .beat mark.fill:nth-of-type(n+4) { animation-delay: 0.85s; }
+  .bank-amount { animation: stamp 0.35s ease-out 0.25s both; }
+  .ending { transition: background-color 0.6s ease, color 0.6s ease; }
+}
+@keyframes beat-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes stamp { 0% { transform: scale(1.25); background: var(--pink); } 100% { transform: scale(1); background: var(--gold); } }

@@ -29,3 +29,7 @@ npm run dev
 - The wizard's "Accept gift" now leads to **The Magical Ending** (was Plot Generator).
 
 Both endings existed in the original app but nothing led to them. If you rerun `scripts/convert-rn-screens.mjs`, reapply these two in `src/story.json`.
+
+## Endings in beats
+
+Endings play one short "beat" per screen. `src/beats.ts` splits each ending on sentence boundaries without changing a word, and `EFFECTS` in that file holds hand-tuned moments (big lines, forced breaks, lights-out, the bank card) per ending.

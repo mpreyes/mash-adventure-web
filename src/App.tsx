@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { story, screenFor } from './story';
-import { Blocks, img, preload, imagesIn } from './Blocks';
+import { Blocks, InlineView, img, preload, imagesIn } from './Blocks';
 import { SketchPad } from './SketchPad';
-import { Spread } from './Spread';
+import { Spread, useIsDesktop } from './Spread';
+import { beatsFor, type Beat } from './beats';
 import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
@@ -276,58 +277,133 @@ function Progress({ filled, total, small = false }: { filled: number; total: num
   );
 }
 
+function BeatView({ beat, vars, res }: { beat: Beat; vars: Record<string, unknown>; res: string[] }) {
+  return (
+    <div className="beat">
+      {beat.bank && (
+        <div className="bank-card" aria-label="Your bank balance">
+          <span className="bank-label">CHECKING · PAYDAY</span>
+          <span className="bank-amount">${res[6]}</span>
+          <span className="bank-note">No deposit this week</span>
+        </div>
+      )}
+      {beat.paras.map((p, i) => (
+        <p key={i} className={`para beat-text-${p.style}`}>
+          {p.c.map((n, j) => <InlineView key={j} node={n} vars={vars} />)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: ResultsProps) {
+  const desktop = useIsDesktop();
   const endingId = endingIdFor(state.number.story_num);
   const [isNew, setIsNew] = useState(false);
   useEffect(() => { if (unlock(endingId)) setIsNew(true); }, [endingId]); // eslint-disable-line react-hooks/exhaustive-deps
   const res = useMemo(() => calculateMash(state.groups, state.number.quiz_num), [state.groups, state.number.quiz_num]);
-  const ending = story.endings[String(state.number.story_num)] ?? story.endings.default;
+  const ending = story.endings[endingId];
+  const beats = useMemo(() => beatsFor(endingId, ending), [endingId, ending]);
+  const [step, setStep] = useState(0);
+  const total = beats.length + 1; // + the fortune screen
+  const isFinal = step === beats.length;
+  const beat = beats[step];
+  const next = () => setStep((s) => Math.min(total - 1, s + 1));
+  const prev = () => setStep((s) => Math.max(0, s - 1));
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+        if ((e.target as HTMLElement).tagName === 'BUTTON' && e.key !== 'ArrowRight') return;
+        e.preventDefault(); next();
+      }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [step]);
+
   const bg = RESULT_BG[ending.bg ?? 0] ?? RESULT_BG[0];
-  // First block is the "You Got: ..." headline; it moves into the colored band.
-  const [head, ...rest] = ending.blocks;
-  const headText = head && head.t === 'p' ? head.c.filter((c): c is string => typeof c === 'string').join('').trim() : '';
-  const title = headText.replace(/^You Got:\s*/, '');
-  const body = rest.filter((b) => b.t !== 'choice');
+  const title = endingTitle(endingId);
+  const vars = { res, profile: state.profile, numbers: state.number, __mark: true };
+  const dark = !isFinal && !!beat?.dark;
+  const image = beat?.image ?? (desktop ? beats[0]?.image : undefined);
+
+  const fortune = (
+    <section className="card fortune" aria-label="Your fortune">
+      <span className="fortune-head">YOUR FORTUNE · MAGIC NUMBER {state.number.quiz_num}</span>
+      <dl>
+        {FORTUNE_LABELS.map((l, i) => (
+          <div key={l}><dt>{l}</dt><dd>{res[i]}</dd></div>
+        ))}
+      </dl>
+    </section>
+  );
+
+  const controls = (
+    <div className="beat-controls">
+      <button className="icon-btn big" onClick={prev} disabled={step === 0} aria-label="Previous part">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+      </button>
+      <button className="btn btn-start" onClick={next}>{step === beats.length - 1 ? 'SEE MY FORTUNE' : 'NEXT'}</button>
+    </div>
+  );
+
   return (
-    <div className="ending">
+    <div className={`ending ${dark ? 'lights-out' : ''}`}>
       <header className="band" style={{ background: bg, color: isLight(bg) ? '#111111' : '#F8F6EF' }}>
-        <span className="band-eyebrow">YOU GOT:</span>
+        <div className="band-top">
+          <span className="band-eyebrow">YOU GOT:</span>
+          <span className="band-eyebrow">{step + 1} / {total}</span>
+        </div>
         <h1 className="band-title">{title}</h1>
+        <div className="band-progress" aria-hidden="true">
+          <span style={{ width: `${((step + 1) / total) * 100}%` }} />
+        </div>
       </header>
-      {isNew && (
-        <div className="unlock-strip">
-          <span className="new-tag">NEW!</span>
-          <div className="unlock-text">
-            <span>Ending unlocked · {unlocked.length} of {ENDING_IDS.length}</span>
-            <Progress filled={unlocked.length} total={ENDING_IDS.length} small />
+
+      {isFinal ? (
+        <div className="ending-body final" key="final">
+          {isNew && (
+            <div className="unlock-strip boxed">
+              <span className="new-tag">NEW!</span>
+              <div className="unlock-text">
+                <span>Ending unlocked · {unlocked.length} of {ENDING_IDS.length}</span>
+                <Progress filled={unlocked.length} total={ENDING_IDS.length} small />
+              </div>
+            </div>
+          )}
+          {fortune}
+          <button className="btn btn-teal" onClick={onReplay}>PLAY AGAIN</button>
+          <p className="replay-note">Same answers, new magic number, maybe a new ending.</p>
+          <button className="btn btn-cream" onClick={onEndings}>SEE ALL ENDINGS</button>
+          <button className="btn btn-cream" onClick={onStartOver}>START OVER</button>
+          <button className="link-btn" onClick={() => setStep(0)}>Read it again</button>
+          <ArtistCard ending />
+          <Credits />
+        </div>
+      ) : desktop ? (
+        <div className="ending-body">
+          <div className="spread beat-spread">
+            <div className="page page-left">
+              {image && <figure className="art-card"><img src={img(image)} alt="" /></figure>}
+            </div>
+            <div className="page page-right">
+              <BeatView key={step} beat={beat} vars={vars} res={res} />
+              {controls}
+              <p className="kbd-hint">Tip: use the arrow keys to turn the page</p>
+            </div>
           </div>
         </div>
+      ) : (
+        <div className="ending-body beat-body">
+          {image && <figure className="art-card"><img src={img(image)} alt="" /></figure>}
+          <BeatView key={step} beat={beat} vars={vars} res={res} />
+          {controls}
+        </div>
       )}
-      <div className="ending-body">
-        <Spread
-          blocks={body}
-          vars={{ res, profile: state.profile, numbers: state.number, __mark: true }}
-          onChoice={onReplay}
-          leftAfter={
-            <section className="card fortune" aria-label="Your fortune">
-              <span className="fortune-head">YOUR FORTUNE · MAGIC NUMBER {state.number.quiz_num}</span>
-              <dl>
-                {FORTUNE_LABELS.map((l, i) => (
-                  <div key={l}><dt>{l}</dt><dd>{res[i]}</dd></div>
-                ))}
-              </dl>
-            </section>
-          }
-          after={<>
-            <button className="btn btn-teal" onClick={onReplay}>PLAY AGAIN</button>
-            <p className="replay-note">Same answers, new magic number, maybe a new ending.</p>
-            <button className="btn btn-cream" onClick={onEndings}>SEE ALL ENDINGS</button>
-            <button className="btn btn-cream" onClick={onStartOver}>START OVER</button>
-          </>}
-        />
-        <ArtistCard ending />
-        <Credits />
-      </div>
     </div>
   );
 }
