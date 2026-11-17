@@ -193,7 +193,8 @@ export function sentences(c: Inline[]): Inline[][] {
       const last = i === parts.length - 1;
       const text = last ? p : p + ' ';
       if (text) cur.push(text);
-      if (!last) { out.push(cur); cur = []; }
+      // A sentence also ends where a string node ends right after its punctuation.
+      if (!last || /[.!?]["”’')]*\s+$/.test(text)) { out.push(cur); cur = []; }
     });
   }
   if (cur.length) out.push(cur);

@@ -180,8 +180,13 @@ function Body({ beat, ctx }: { beat: Beat; ctx: Ctx }) {
       );
     }
     case 'strikes': {
-      const [first, ...mid] = all;
-      const last = mid.pop();
+      const [first, ...rest] = all;
+      const last = rest.pop();
+      // "No toppings, no sauces..." reads as two separate cross-outs.
+      const mid = rest.flatMap(({ s, big }) => {
+        if (s.length !== 1 || typeof s[0] !== 'string') return [{ s, big }];
+        return s[0].split(/(?<=,)\s+/).map((t, i, arr) => ({ s: [i < arr.length - 1 ? t + ' ' : t] as Inline[], big }));
+      });
       return (
         <div className="strikes">
           {first && <P c={first.s} vars={vars} big />}
