@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { story, screenFor } from './story';
 import { Blocks, img, preload, imagesIn } from './Blocks';
 import { SketchPad } from './SketchPad';
+import { Spread } from './Spread';
 import { ArtistCard, Credits } from './ArtistCard';
 import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
@@ -77,6 +78,19 @@ export default function App() {
     if (next.has('Results')) srcs.push(...Object.values(story.endings).flatMap((e) => imagesIn(e.blocks)));
     preload(srcs);
   }, [id]);
+  // Desktop: press A, B, C... to pick a lettered choice.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement;
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return;
+      const btn = document.querySelector<HTMLButtonElement>(`main [data-key="${e.key.toUpperCase()}"]`);
+      if (btn) { e.preventDefault(); btn.click(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const vars = { profile: state.profile, numbers: state.number };
   const isResult = id === 'Results';
   const isEndings = id === 'Endings';
@@ -87,7 +101,7 @@ export default function App() {
   else if (story.inputs[id]) body = <InputView key={id} id={id} state={state} go={go} />;
   else if (id === 'MashQuizNumber') body = <MagicNumber state={state} go={go} />;
   else if (isResult) body = <Results state={state} unlocked={unlocked} unlock={unlock} onReplay={replay} onStartOver={startOver} onEndings={() => go('Endings')} />;
-  else if (story.scenes[id]) body = <Blocks blocks={story.scenes[id].blocks} vars={vars} onChoice={onChoice} />;
+  else if (story.scenes[id]) body = <Spread blocks={story.scenes[id].blocks} vars={vars} onChoice={onChoice} />;
   else body = <p className="para">Lost in the woods. <button className="choice" onClick={home}>Home</button></p>;
 
   return (
@@ -99,10 +113,17 @@ export default function App() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
           ) : <span className="icon-btn ghost" />}
-          <span className="title">{isResult ? 'RESULTS' : isEndings ? 'ENDINGS' : 'M.A.S.H.'}</span>
-          <button className="icon-btn" onClick={home} aria-label="Home">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></svg>
-          </button>
+          <span className="title">{isResult ? 'RESULTS' : isEndings ? 'ENDINGS' : <>M.A.S.H.<span className="desktop-only"> ADVENTURE</span></>}</span>
+          <div className="topbar-right">
+            {!isEndings && (
+              <button className="header-endings desktop-only" onClick={() => go('Endings')}>
+                ENDINGS <span className="count-badge">{unlocked.length}/{ENDING_IDS.length}</span>
+              </button>
+            )}
+            <button className="icon-btn" onClick={home} aria-label="Home">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></svg>
+            </button>
+          </div>
         </header>
       )}
       <main key={state.route + state.history.length} className={`screen ${isResult ? 'result' : ''}`}>
@@ -126,36 +147,40 @@ function Home({ hasAnswers, unlockedCount, onStart, onReplay, onClear, onHowTo, 
   return (
     <div className="home">
       <img className="logo" src={img('MASH.png')} alt="M.A.S.H. Adventure" />
-      <div className="card slides-card">
-        <div className="slides">
-          {SLIDES.map((s, j) => <img key={s} src={img(s)} alt="" className={j === i ? 'on' : ''} />)}
-        </div>
-        <div className="chips" aria-hidden="true">
-          {'MASH'.split('').map((l, j) => <span key={l} className={j === i ? 'chip on' : 'chip'}>{l}</span>)}
-        </div>
-        <span className="slides-caption">Mansion? Apartment? Shack? House?</span>
-      </div>
-      {hasAnswers ? (
-        <>
-          <button className="btn btn-start" onClick={onReplay}>PLAY AGAIN</button>
-          <div className="btn-pair">
-            <button className="btn btn-gold" onClick={onStart}>EDIT ANSWERS</button>
-            <button className="btn btn-cream" onClick={onClear}>START OVER</button>
+      <div className="home-main">
+        <div className="card slides-card">
+          <div className="slides">
+            {SLIDES.map((s, j) => <img key={s} src={img(s)} alt="" className={j === i ? 'on' : ''} />)}
           </div>
-        </>
-      ) : (
-        <button className="btn btn-start" onClick={onStart}>START</button>
-      )}
-      <div className="btn-pair">
-        <button className="btn btn-purple" onClick={onHowTo}>HOW TO PLAY</button>
-        <button className="btn btn-mint" onClick={onAbout}>ABOUT</button>
-      </div>
-      <button className="btn btn-cream btn-endings" onClick={onEndings}>
-        ENDINGS <span className="count-badge">{unlockedCount}/{ENDING_IDS.length}</span>
-      </button>
-      <div className="home-foot">
-        <ArtistCard />
-        <Credits />
+          <div className="chips" aria-hidden="true">
+            {'MASH'.split('').map((l, j) => <span key={l} className={j === i ? 'chip on' : 'chip'}>{l}</span>)}
+          </div>
+          <span className="slides-caption">Mansion? Apartment? Shack? House?</span>
+        </div>
+        <div className="home-actions">
+          {hasAnswers ? (
+            <>
+              <button className="btn btn-start" onClick={onReplay}>PLAY AGAIN</button>
+              <div className="btn-pair">
+                <button className="btn btn-gold" onClick={onStart}>EDIT ANSWERS</button>
+                <button className="btn btn-cream" onClick={onClear}>START OVER</button>
+              </div>
+            </>
+          ) : (
+            <button className="btn btn-start" onClick={onStart}>START</button>
+          )}
+          <div className="btn-pair">
+            <button className="btn btn-purple" onClick={onHowTo}>HOW TO PLAY</button>
+            <button className="btn btn-mint" onClick={onAbout}>ABOUT</button>
+          </div>
+          <button className="btn btn-cream btn-endings" onClick={onEndings}>
+            ENDINGS <span className="count-badge">{unlockedCount}/{ENDING_IDS.length}</span>
+          </button>
+          <div className="home-foot">
+            <ArtistCard />
+            <Credits />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -182,7 +207,7 @@ function InputView({ id, state, go }: { id: string; state: GameState; go: Go }) 
 
   return (
     <form onSubmit={next} className="input-screen" noValidate>
-      <Blocks blocks={screen.blocks} vars={{}} onChoice={() => {}} />
+      <Spread blocks={screen.blocks} vars={{}} onChoice={() => {}} after={<>
       {screen.fields.map((f) => {
         const rule = ruleFor(f.key);
         const err = errors[f.key];
@@ -207,6 +232,7 @@ function InputView({ id, state, go }: { id: string; state: GameState; go: Go }) 
         );
       })}
       <button className="btn btn-start" type="submit">NEXT</button>
+      </>} />
     </form>
   );
 }
@@ -226,7 +252,7 @@ function MagicNumber({ state, go }: { state: GameState; go: Go }) {
   };
   const blocks = story.scenes.MashQuizNumber.blocks;
   return (
-    <Blocks
+    <Spread
       blocks={blocks}
       vars={vars}
       renderSketch={() => <SketchPad />}
@@ -278,19 +304,27 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
         </div>
       )}
       <div className="ending-body">
-        <Blocks blocks={body} vars={{ res, profile: state.profile, numbers: state.number, __mark: true }} onChoice={onReplay} />
-        <section className="card fortune" aria-label="Your fortune">
-          <span className="fortune-head">YOUR FORTUNE · MAGIC NUMBER {state.number.quiz_num}</span>
-          <dl>
-            {FORTUNE_LABELS.map((l, i) => (
-              <div key={l}><dt>{l}</dt><dd>{res[i]}</dd></div>
-            ))}
-          </dl>
-        </section>
-        <button className="btn btn-teal" onClick={onReplay}>PLAY AGAIN</button>
-        <p className="replay-note">Same answers, new magic number, maybe a new ending.</p>
-        <button className="btn btn-cream" onClick={onEndings}>SEE ALL ENDINGS</button>
-        <button className="btn btn-cream" onClick={onStartOver}>START OVER</button>
+        <Spread
+          blocks={body}
+          vars={{ res, profile: state.profile, numbers: state.number, __mark: true }}
+          onChoice={onReplay}
+          leftAfter={
+            <section className="card fortune" aria-label="Your fortune">
+              <span className="fortune-head">YOUR FORTUNE · MAGIC NUMBER {state.number.quiz_num}</span>
+              <dl>
+                {FORTUNE_LABELS.map((l, i) => (
+                  <div key={l}><dt>{l}</dt><dd>{res[i]}</dd></div>
+                ))}
+              </dl>
+            </section>
+          }
+          after={<>
+            <button className="btn btn-teal" onClick={onReplay}>PLAY AGAIN</button>
+            <p className="replay-note">Same answers, new magic number, maybe a new ending.</p>
+            <button className="btn btn-cream" onClick={onEndings}>SEE ALL ENDINGS</button>
+            <button className="btn btn-cream" onClick={onStartOver}>START OVER</button>
+          </>}
+        />
         <ArtistCard ending />
         <Credits />
       </div>

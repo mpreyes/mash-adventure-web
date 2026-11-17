@@ -134,6 +134,12 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 .ending-card.locked .num { border-bottom: 2px dashed var(--muted); }
 .ending-card .lock { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-family: var(--pixel); font-size: 12px; }
 
+/* header extras */
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.header-endings { font-family: var(--pixel); font-size: 12px; background: none; border: 0; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.desktop-only { display: none; }
+.kbd-hint { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+
 /* madebit card */
 .artist-card { background: var(--cream); border: 2px solid var(--ink); padding: 14px; margin: 20px 0 10px; }
 .artist-card p { margin: 0 0 12px; font-size: 15px; line-height: 1.5; }
@@ -145,6 +151,56 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 .pill:hover { color: var(--ink); filter: brightness(1.05); }
 .credits { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 0; }
 
+.home-actions { display: flex; flex-direction: column; gap: 16px; }
+.home-main { display: flex; flex-direction: column; gap: 16px; }
+
+/* desktop: an open storybook */
+@media (min-width: 960px) {
+  .app { max-width: none; }
+  .desktop-only { display: inline-flex; }
+  span.desktop-only { display: inline; }
+  .topbar { padding: 14px 32px; }
+  .topbar .title { font-size: 16px; }
+  .screen { padding: 40px 32px 56px; display: flex; flex-direction: column; align-items: center; }
+  .screen > * { width: 100%; }
+  .screen.result { padding: 0; }
+
+  .spread { max-width: 1180px; margin: 0 auto; display: flex; align-items: stretch; background: var(--cream); border: 2px solid var(--ink); box-shadow: 0 8px 0 var(--ink); }
+  .page { flex: 1 1 0; min-width: 0; }
+  .page-left { background: #eef4f9; border-right: 2px solid var(--ink); padding: 32px; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+  .page-right { padding: 40px 44px; display: flex; flex-direction: column; }
+  .page-left .art-card { background: transparent; border: 0; box-shadow: none; padding: 0; margin: 0; }
+  .page-left .art-card img { height: 420px; }
+  .page-left .art-card + .art-card img { height: 280px; }
+  .page-right .para, .reading .para { font-size: 19px; line-height: 1.75; max-width: 34em; }
+  .page-right .s-questionStyling:not(.long) { font-size: 22px; line-height: 1.5; }
+  .page-right .choice { font-size: 18px; }
+  .reading { max-width: 720px; margin: 0 auto; }
+  .reading .art-card img { height: 320px; }
+
+  .input-screen { max-width: 1180px; margin: 0 auto; }
+  .input-screen .page-left .art-card img { height: 360px; }
+
+  .ending-body { padding: 40px 32px 56px; }
+  .band { padding: 28px max(32px, calc((100% - 1180px) / 2)); }
+  .band-title { font-size: 22px; }
+  .unlock-strip { padding: 12px max(32px, calc((100% - 1180px) / 2)); }
+  .page-left .fortune { margin: 0; }
+  .ending-body .artist-card, .ending-body .credits { max-width: 1180px; margin-left: auto; margin-right: auto; }
+  .ending-body .artist-card { margin-top: 32px; }
+
+  .home { max-width: 1120px; margin: 0 auto; gap: 32px; padding-top: 8px; }
+  .home .logo { height: 240px; max-width: 620px; align-self: center; }
+  .home-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px; align-items: center; }
+  .home-main .slides-card { order: 2; padding: 28px; }
+  .home-main .slides { height: 360px; }
+  .home-actions { display: flex; flex-direction: column; gap: 16px; }
+  .home-actions .btn-start { min-height: 64px; font-size: 18px; }
+
+  .endings { max-width: 1000px; margin: 0 auto; }
+  .endings-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .endings .btn-start { max-width: 420px; align-self: center; }
+}
 /* motion: buttons press down like a key; the next screen fades in in place. No hover lift, no bouncing. */
 .btn:active, .choice:active, .image-choice:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--ink); }
 @media (prefers-reduced-motion: no-preference) {

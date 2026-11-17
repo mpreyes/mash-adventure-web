@@ -70,7 +70,7 @@ type Props = {
 
 const LETTERS = 'ABCDEFGH';
 
-const countChoices = (list: Block[]): number =>
+export const countChoices = (list: Block[]): number =>
   list.reduce((n, b) => n + (b.t === 'row' ? countChoices(b.c) : b.t === 'choice' && !b.img ? 1 : 0), 0);
 
 export function Blocks({ blocks, vars, onChoice, renderSketch }: Props) {
@@ -111,7 +111,7 @@ export function Blocks({ blocks, vars, onChoice, renderSketch }: Props) {
           const isStory = (b.color ?? '#1698bc') === '#1698bc';
           const badge = isStory && lettered ? LETTERS[letter++] : null;
           return (
-            <button key={i} className={`choice ${isStory ? 'story' : 'alt'}`} onClick={() => onChoice(b)}>
+            <button key={i} className={`choice ${isStory ? 'story' : 'alt'}`} data-key={badge ?? undefined} onClick={() => onChoice(b)}>
               {badge && <span className="badge">{badge}</span>}
               <span>{b.label}</span>
             </button>
