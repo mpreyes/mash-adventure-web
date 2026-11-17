@@ -379,9 +379,9 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 .count-opt.cur { background: var(--gold); outline: 2px solid var(--ink); }
 .count-opt.cur.hit { background: var(--pink); }
 .count-opt.out { color: #8a96a2; }
-.count-opt.out::after { content: ''; position: absolute; left: 3px; right: 3px; top: 52%; height: 2px; background: #c8332d; transform-origin: left; animation: count-strike .25s ease-out both; }
+.count-opt.out::after { content: ''; position: absolute; left: 3px; right: 3px; top: 52%; height: 2px; background: #c8332d; transform-origin: left; animation: count-strike .7s ease-in-out both; }
 .count-opt.win { font-weight: 700; }
-.count-opt.win::before { content: ''; position: absolute; inset: -4px -3px; border: 2px solid #c8332d; border-radius: 50%; transform: rotate(-3deg); animation: count-ring .45s ease-out both; }
+.count-opt.win::before { content: ''; position: absolute; inset: -4px -3px; border: 2px solid #c8332d; border-radius: 50%; transform: rotate(-3deg); animation: count-ring 1s ease-in-out both; }
 @keyframes count-strike { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes count-ring { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @media (prefers-reduced-motion: reduce) { .count-opt.out::after, .count-opt.win::before { animation: none; } }

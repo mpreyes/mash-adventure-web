@@ -8,8 +8,8 @@ const LABELS = ['Home', 'Love', 'City', 'Kids', 'Job', 'Ride', 'Bank', 'Pet'];
 const ICONS = [null, 'love_interest.png', 'cities.png', 'kids.png', 'professions.png', 'transportation.png', 'money.png', 'pets.png'];
 // Every cross-out gets the same beat, whatever the magic number: the counts in
 // between share COUNT_MS, then the cross-out holds for HIT_MS.
-const COUNT_MS = 650;
-const HIT_MS = 750;
+const COUNT_MS = 450;
+const HIT_MS = 1000;
 
 type Props = { groups: Record<string, Record<string, string>>; magic: number; onDone: () => void };
 
@@ -45,6 +45,8 @@ export function MashCount({ groups, magic, onDone }: Props) {
   const out = options.map((o) => o.map(() => false));
   for (let j = 0; j < k; j++) if (steps[j].hit) out[steps[j].c][steps[j].i] = true;
   const cur = !finished ? steps[k] : null;
+  // The pen starts crossing out the moment the count lands on it.
+  if (cur?.hit) out[cur.c][cur.i] = true;
   const shownCount = cur ? cur.count : steps.length ? steps[steps.length - 1].count : 0;
   const winner = (c: number) => out[c].filter((x) => !x).length === 1;
 
