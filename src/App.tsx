@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { story, screenFor } from './story';
-import { Blocks, InlineView, img, preload, imagesIn } from './Blocks';
+import { Blocks, HIDDEN, InlineView, img, preload, imagesIn } from './Blocks';
 import { SketchPad } from './SketchPad';
 import { Spread, useIsDesktop } from './Spread';
 import { beatsFor } from './beats';
@@ -251,8 +251,8 @@ function MagicNumber({ state, go }: { state: GameState; go: Go }) {
     return () => { clearTimeout(a); clearTimeout(b); };
   }, []);
   const vars = {
-    show_question: showQ ? 'Did you draw something cool yet?' : ' ',
-    show_random_num: showNum ? `Okay here's your magic number: ${quizNum}` : ' ',
+    show_question: `${showQ ? '' : HIDDEN}Did you draw something cool yet?`,
+    show_random_num: `${showNum ? '' : HIDDEN}Okay here's your magic number: ${quizNum}`,
   };
   const blocks = story.scenes.MashQuizNumber.blocks;
   return (

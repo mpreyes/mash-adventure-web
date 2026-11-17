@@ -366,3 +366,5 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 }
 @keyframes beat-in { from { opacity: 0; transform: translateY(8px); } }
 @keyframes stamp { 0% { transform: scale(1.25); background: var(--pink); } 100% { transform: scale(1); background: var(--gold); } }
+
+.reserve { visibility: hidden; }

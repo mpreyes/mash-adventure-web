@@ -48,15 +48,23 @@ function tidy(nodes: Inline[]): Inline[] {
   return out;
 }
 
+export const HIDDEN = '\u2063';
+
 export function InlineView({ node, vars }: { node: Inline; vars: Vars }) {
   if (typeof node === 'string') return <>{node}</>;
   if ('v' in node) {
     const val = evalVar(node.v, vars);
+    // HIDDEN-prefixed values keep their space on the page but stay invisible (used for timed reveals).
+    if (val.startsWith(HIDDEN)) return <span className="reserve">{val.slice(1)}</span>;
     return vars.__mark && val.trim() ? <mark className="fill">{val}</mark> : <>{val}</>;
   }
   const kids = tidy(node.c).map((c, i) => <InlineView key={i} node={c} vars={vars} />);
-  if (node.href) return <a href={node.href} target="_blank" rel="noreferrer">{kids}</a>;
-  return <span className={`s-${node.s.replace(/[^a-zA-Z0-9]/g, '')}`}>{kids}</span>;
+  // Spaces at the edges of a styled span belong outside it, so neighbouring words don't run together.
+  const first = node.c[0], last = node.c[node.c.length - 1];
+  const lead = typeof first === 'string' && /^\s/.test(first.replace(/\t/g, ' ')) ? ' ' : '';
+  const trail = typeof last === 'string' && /\s$/.test(last.replace(/\t/g, ' ')) ? ' ' : '';
+  if (node.href) return <>{lead}<a href={node.href} target="_blank" rel="noreferrer">{kids}</a>{trail}</>;
+  return <>{lead}<span className={`s-${node.s.replace(/[^a-zA-Z0-9]/g, '')}`}>{kids}</span>{trail}</>;
 }
 
 const styleClass = (s?: string) => (s ? s.split(',').map((x) => `s-${x}`).join(' ') : '');
