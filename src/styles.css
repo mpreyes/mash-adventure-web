@@ -387,3 +387,16 @@ mark.fill { background: var(--gold); color: var(--ink); padding: 0 4px; border-r
 @media (prefers-reduced-motion: reduce) { .count-opt.out::after, .count-opt.win::before { animation: none; } }
 .count-sheet .sheet-head { align-items: center; gap: 10px; font-size: 10px; line-height: 1.5; }
 .count-badge-live { white-space: nowrap; flex-shrink: 0; }
+
+/* shareable fortune card */
+.fortune-share { margin: 6px 0 22px; }
+.fortune-card { margin: 0 auto; max-width: 420px; }
+.fortune-card img, .fortune-card-wait { display: block; width: 100%; aspect-ratio: 4 / 5; box-shadow: 6px 6px 0 var(--ink); background: var(--cream); }
+.btn-pink { background: var(--pink); color: var(--ink); }
+.share-row { max-width: 420px; margin: 22px auto 0; }
+.share-pair { display: flex; gap: 10px; }
+.share-pair .btn { font-size: 11px; }
+.share-note { min-height: 1.4em; text-align: center; font-size: 14px; margin: 10px 0 0; overflow-wrap: anywhere; }
+.friend { display: flex; flex-direction: column; gap: 18px; padding-top: 22px; }
+.friend-head { font-family: var(--pixel); font-size: 13px; text-align: center; margin: 0; }
+.friend .btn { max-width: 420px; margin: 8px auto 0; }

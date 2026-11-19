@@ -12,17 +12,10 @@ import { calculateMash, MASH_GROUP } from './mash';
 import type { Block, GameState } from './types';
 import { ruleFor, inputPropsFor, sanitize } from './validation';
 import { ENDING_IDS, endingIdFor, endingTitle, useUnlocked } from './endings';
+import { RESULT_BG, isLight, readShared, type Shared } from './share';
+import { FortuneCard, ShareButtons } from './ShareCard';
 
 const SAVE_KEY = 'mash-adventure-save-v1';
-// Original ending colors, each swapped for the closest madebit palette color.
-const RESULT_BG = ['#9DBE3D', '#187489', '#93C78E', '#F77FA1', '#F2B84B', '#796AD8', '#187489', '#F2B84B', '#C8332D', '#93C78E', '#796AD8', '#796AD8'];
-
-// The original used white text on every ending; light backgrounds get dark text so they're readable.
-const isLight = (hex: string) => {
-  const n = parseInt(hex.slice(1), 16);
-  return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 170;
-};
-
 const fresh = (): GameState => ({
   route: 'Home',
   history: [],
@@ -40,6 +33,27 @@ function load(): GameState {
 }
 
 export default function App() {
+  const [friend, setFriend] = useState<Shared | null>(readShared);
+  if (friend) return <FriendView s={friend} onPlay={() => { history.replaceState(null, '', import.meta.env.BASE_URL); setFriend(null); }} />;
+  return <Game />;
+}
+
+// Someone opened a shared fortune link: show their card, then send them to play their own.
+function FriendView({ s, onPlay }: { s: Shared; onPlay: () => void }) {
+  return (
+    <div className="app">
+      <header className="topbar"><span className="icon-btn ghost" /><span className="title">M.A.S.H. ADVENTURE</span><span className="icon-btn ghost" /></header>
+      <main className="screen friend">
+        <p className="friend-head">{s.n.trim() ? `${s.n.trim()} got` : 'Someone got'}</p>
+        <FortuneCard s={s} />
+        <button className="btn btn-pink" onClick={onPlay}>PLAY YOURS</button>
+        <p className="replay-note">Takes about 5 minutes. No sign up.</p>
+      </main>
+    </div>
+  );
+}
+
+function Game() {
   const [state, setState] = useState<GameState>(load);
   const { unlocked, unlock } = useUnlocked();
 
@@ -269,7 +283,6 @@ function MagicNumber({ state, go }: { state: GameState; go: Go }) {
   );
 }
 
-const FORTUNE_LABELS = ['Home', 'Love', 'City', 'Kids', 'Job', 'Ride', 'Bank', 'Pet'];
 
 type ResultsProps = { state: GameState; unlocked: string[]; unlock: (id: string) => boolean; onReplay: () => void; onStartOver: () => void; onEndings: () => void };
 
@@ -322,14 +335,11 @@ function Results({ state, unlocked, unlock, onReplay, onStartOver, onEndings }: 
   const usable = (b: typeof beat) => (b?.image && !(b.overlay?.layout && CONSUMES_IMAGE.has(b.overlay.layout)) ? b.image : undefined);
   const leftImage = ownImage ?? beats.slice(0, step + 1).reverse().map(usable).find(Boolean) ?? beats.map(usable).find(Boolean) ?? 'fortune.png';
 
+  const shared: Shared = { n: state.profile.name, e: endingId, m: state.number.quiz_num, a: res };
   const fortune = (
-    <section className="card fortune" aria-label="Your fortune">
-      <span className="fortune-head">YOUR FORTUNE · MAGIC NUMBER {state.number.quiz_num}</span>
-      <dl>
-        {FORTUNE_LABELS.map((l, i) => (
-          <div key={l}><dt>{l}</dt><dd>{res[i]}</dd></div>
-        ))}
-      </dl>
+    <section className="fortune-share" aria-label="Your fortune">
+      <FortuneCard s={shared} />
+      <ShareButtons s={shared} />
     </section>
   );
 
